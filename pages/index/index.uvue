@@ -1,0 +1,211 @@
+<template>
+	<view class="page">
+		<button class="gray-button" @tap="startFaceSearchDemo">1:N人脸搜索识别</button>
+		<button class="gray-button" @tap="openPhotoList">查看所有照片</button>
+		<button class="gray-button" @tap="addFaceSearchFeatureByCameraDemo">SDK相机录入人脸信息</button>
+		<button class="gray-button" @tap="addFaceSearchFeatureByImageDemo">通过图片录入人脸信息</button>
+		<button class="gray-button" @tap="deleteFaceSearchFeatureDemo">删除人脸搜索特征值</button>
+		<button class="gray-button" @tap="queryFaceSearchFeatureDemo">查询人脸搜索特征值</button>
+		<button class="gray-button" @tap="insertFaceSearchFeatureDemo">同步人脸搜索特征值</button>
+		<button class="gray-button" @tap="insertManyFaceFeatureSDemo">批量同步人脸搜索特征值</button>
+		<button class="gray-button" @tap="switchCameraDemo">切换前后摄像头</button>
+
+		<view class="result-box">
+			<view class="contact-text">Email: FaceAISDK.Service@gmail.com</view>
+			<scroll-view scroll-y="true" class="scroll-view-box">
+				<text class="text-content">{{ faceSearchResult }}</text>
+			</scroll-view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		startFaceSearch,
+		switchCamera,
+		insertFaceSearchFeature,
+		insertManyFeatures,
+		addFaceSearchFeatureByCamera,
+		addFaceSearchFeatureByImage,
+		deleteFaceSearchFeature,
+		queryFaceSearchFeature,
+		toastMessage,
+		ResultJSON
+	} from "@/uni_modules/FaceAI-Search";
+	import { JSON_FACE_FEATURES_DATA } from "./faceFeatureList.uts";
+	import { base64FaceImage } from './imageData.uts';
+	import { saveFacePhotoRecord } from '@/pages/photo-list/photoStore.uts';
+
+	export default {
+		data() {
+			return {
+				faceID: 'Test',
+				faceFeature: 'faceFeature is a string with lenth 1024',
+				faceSearchResult: 'faceSearchResult',
+				base64FaceImage: base64FaceImage as string
+			}
+		},
+		methods: {
+			openPhotoList: function () {
+				uni.navigateTo({
+					url: '/pages/photo-list/index'
+				})
+			},
+			saveSearchPhoto: function (base64: string, results: UTSJSONObject[] | null) {
+				if (base64.length == 0) {
+					return
+				}
+
+				let matched = false
+				let faceName = ''
+				let faceScore = 0
+				if (results != null && results.length > 0) {
+					matched = true
+					const firstFace = results[0]
+					faceName = firstFace.getString("faceName") ?? ''
+					faceScore = firstFace.getNumber("faceScore") ?? 0
+				}
+
+				saveFacePhotoRecord(base64, matched, faceName, faceScore)
+			},
+			startFaceSearchDemo: function () {
+				const threshold = 0.85
+				const oneTime = false
+				const searchTimeOut = 5
+				const highRes = false
+				const searchOne = true
+				startFaceSearch(
+					threshold,
+					oneTime,
+					searchTimeOut,
+					highRes,
+					searchOne,
+					(jsonStr: string) => {
+						try {
+							const root = JSON.parse(jsonStr) as UTSJSONObject
+							const results = root.getArray<UTSJSONObject>("data")
+							const base64 = root.getString("base64") ?? ""
+
+							console.log("收到搜索结果:", results)
+							this.faceSearchResult = "【人脸搜索回调】\n" + JSON.stringify(results)
+							this.saveSearchPhoto(base64, results)
+
+							if (results != null && results.length > 0) {
+								const firstFace = results[0]
+								const name = firstFace.getString("faceName")
+								const score = firstFace.getNumber("faceScore")
+
+								if (name != null && searchOne) {
+									toastMessage(base64, "最匹配:" + name + "," + score)
+								}
+							} else {
+								if (searchOne) {
+									toastMessage("", "无结果")
+								}
+							}
+						} catch (e) {
+							console.error("解析数据失败:", e)
+						}
+					}
+				)
+			},
+			addFaceSearchFeatureByCameraDemo: function () {
+				addFaceSearchFeatureByCamera(
+					this.faceID,
+					1,
+					true,
+					(result: ResultJSON) => {
+						console.log("result:", result)
+						this.faceSearchResult = JSON.stringify(result, ['code', 'msg', 'faceBase64'], 4)
+					}
+				)
+			},
+			addFaceSearchFeatureByImageDemo: function () {
+				addFaceSearchFeatureByImage(
+					this.faceID,
+					this.base64FaceImage,
+					(result: ResultJSON) => {
+						console.log("result:", result)
+						this.faceSearchResult = JSON.stringify(result, ['code', 'msg', 'faceBase64'], 4)
+					}
+				)
+			},
+			deleteFaceSearchFeatureDemo: function () {
+				deleteFaceSearchFeature(
+					this.faceID,
+					(result: ResultJSON) => {
+						this.faceSearchResult = JSON.stringify(result)
+					}
+				)
+			},
+			queryFaceSearchFeatureDemo: function () {
+				queryFaceSearchFeature(
+					this.faceID,
+					(result: string) => {
+						this.faceSearchResult = "【人脸查询回调】\n" + result
+					}
+				)
+			},
+			insertFaceSearchFeatureDemo: function () {
+				insertFaceSearchFeature(
+					this.faceID,
+					this.faceFeature,
+					"tag",
+					"group",
+					(result: ResultJSON) => {
+						this.faceSearchResult = JSON.stringify(result)
+					}
+				)
+			},
+			insertManyFaceFeatureSDemo: function () {
+				insertManyFeatures(
+					JSON_FACE_FEATURES_DATA,
+					(result: ResultJSON) => {
+						this.faceSearchResult = JSON.stringify(result)
+					}
+				)
+			},
+			switchCameraDemo: function () {
+				switchCamera(0)
+			},
+		}
+	}
+</script>
+
+<style>
+	.page {
+		padding-bottom: 30rpx;
+	}
+
+	.result-box {
+		margin: 20rpx;
+	}
+
+	.contact-text {
+		font-size: 28rpx;
+		color: #475569;
+		margin-bottom: 12rpx;
+	}
+
+	.scroll-view-box {
+		height: 400rpx;
+		border: 1px solid #ccc;
+		border-radius: 10rpx;
+		background-color: #f8f8f8;
+		padding: 15rpx;
+		box-sizing: border-box;
+	}
+
+	.text-content {
+		font-size: 28rpx;
+		color: #333;
+		white-space: pre-wrap;
+	}
+
+	.gray-button {
+		background-color: #ffffff;
+		color: #800080;
+		border: none;
+		margin: 12rpx 20rpx;
+	}
+</style>

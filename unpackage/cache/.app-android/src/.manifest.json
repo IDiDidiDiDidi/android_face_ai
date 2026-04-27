@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "env": {
+    "compiler_version": "5.07"
+  },
+  "files": {
+    "index.kt": {
+      "class": "",
+      "md5": "28593751bd59e2100ba8e4aa9d61131f2480deda"
+    },
+    "pages/index/index.kt": {
+      "md5": "161fcf19f8f95f00546fb45599f6869a1266db9f",
+      "class": "GenPagesIndexIndex"
+    },
+    "pages/photo-list/index.kt": {
+      "class": "GenPagesPhotoListIndex",
+      "md5": "668d4535a816726628cdb774745023a4133917f2"
+    }
+  }
+}

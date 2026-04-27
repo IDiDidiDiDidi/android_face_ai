@@ -1,0 +1,23 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "\u4eba\u8138\u641c\u7d22\u8bc6\u522b"
+			}
+		},
+		{
+			"path": "pages/photo-list/index",
+			"style": {
+				"navigationBarTitleText": "\u6240\u6709\u7167\u7247"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "\u4eba\u8138\u641c\u7d22\u8bc6\u522b",
+		"navigationBarBackgroundColor": "#fc0107",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}

@@ -1,0 +1,167 @@
+import { ResultJSON } from '../interface.uts';
+import Application from 'android.app.Application';
+import Activity from 'android.app.Activity';
+import Intent from 'android.content.Intent';
+import FaceSDKConfig from "com.faceAI.demo.FaceSDKConfig";
+import FaceAISDKNative from "uts.sdk.modules.uniFaceAISDK.FaceAISDKNative";
+import FaceSearchActivity from "uts.sdk.modules.uniFaceAISDK.FaceSearchActivity";
+import FaceResultManager from "uts.sdk.modules.uniFaceAISDK.FaceResultManager";
+import System from 'java.lang.System';
+import AddFaceFeatureActivity from "com.faceAI.demo.SysCamera.addFace.AddFaceFeatureActivity";
+import BitmapUtils from "com.faceAI.demo.base.utils.BitmapUtils";
+import FaceSearchFeatureManger from 'com.ai.face.faceSearch.search.FaceSearchFeatureManger';
+import Gson from 'com.google.gson.Gson';
+/**
+ * 启动持续人脸搜索 Activity
+ * 使用 export function 确保 @UTSJS.keepAlive 生效
+ */
+@UTSJS.keepAlive
+export function startFaceSearch(searchThreshold: number, searchOneTime: boolean, searchTimeOut: number, isCameraSizeHigh: boolean, searchOne: boolean, // true（1:N）：取镜头画面最大人脸进行搜索匹配 false（M：N）：镜头画面所有人脸都进行搜索
+callback: (jsonResult: string) => void): void {
+    // 1. 添加静默活体liveness
+    FaceResultManager.setCallback((json: string, liveness: number, base64: string) => {
+        const finalJson = `{"data":${json},"liveness":${liveness},"base64":"${base64}"}`;
+        try {
+            callback(finalJson);
+        }
+        catch (e: any) {
+            __f__('error', 'at uni_modules/FaceAI-Search/utssdk/app-android/index.uts:35', "FaceAI Callback Error:", e);
+        }
+    });
+    // 2. 启动 Activity
+    UTSAndroid.getUniActivity()!.runOnUiThread(() => {
+        const context = UTSAndroid.getUniActivity() as Activity;
+        FaceSDKConfig.init(context);
+        const intent = new Intent(context, FaceSearchActivity().javaClass);
+        intent.putExtra("THRESHOLD_KEY", searchThreshold);
+        intent.putExtra("SEARCH_ONE_TIME", searchOneTime);
+        intent.putExtra("SEARCH_TIME_OUT", searchTimeOut);
+        intent.putExtra("IS_CAMERA_SIZE_HIGH", isCameraSizeHigh);
+        intent.putExtra("SEARCH_ONE", searchOne);
+        context.startActivity(intent);
+    });
+}
+// Toast 放到主线程
+export function toastMessage(base64Image: string, message: string): void {
+    UTSAndroid.getUniActivity()!.runOnUiThread(() => {
+        const context = UTSAndroid.getUniActivity() as Activity;
+        FaceAISDKNative.toastMessage(context, base64Image, message);
+    });
+}
+export function switchCamera(cameraID: number): void {
+    const context = UTSAndroid.getAppContext() as Application;
+    FaceSDKConfig.init(context);
+    FaceSDKConfig.setCameraID(context, cameraID.toInt());
+}
+export function insertFaceSearchFeature(faceID: string, faceFeature: string, tag: string, group: string, callback: (result: ResultJSON) => void): void {
+    const context = UTSAndroid.getAppContext() as Application;
+    FaceSDKConfig.init(context);
+    // 修复：UTS中字符串不可能为null，直接判断是否为空字符串
+    if (faceID == "") {
+        callback({ code: -1, msg: "参数错误: faceID 不能为空", faceFeature: "", faceBase64: "" } as ResultJSON);
+        return;
+    }
+    if (faceFeature == "" || faceFeature.length != 1024) {
+        const currentLen = faceFeature.length;
+        callback({ code: -2, msg: `参数错误: faceFeature 长度必须为 1024 (当前: ${currentLen})`, faceFeature: "", faceBase64: "" } as ResultJSON);
+        return;
+    }
+    try {
+        // 修复：移除冗余的三元运算符 null 校验，防止底层装箱异常
+        const safeTag = tag == "" ? "" : tag;
+        const safeGroup = group == "" ? "" : group;
+        FaceSearchFeatureManger.getInstance(context)
+            .insertFaceFeature(faceID, faceFeature, System.currentTimeMillis(), safeTag, safeGroup);
+        callback({ code: 1, msg: "success", faceFeature: "", faceBase64: "" } as ResultJSON);
+    }
+    catch (e: any) {
+        // 修复：不能写 catch (e: Exception)，UTS 语法不允许为 catch 指定类型
+        callback({ code: -3, msg: "Native 执行异常", faceFeature: "", faceBase64: "" } as ResultJSON);
+    }
+}
+export function insertManyFeatures(jsonFaceFeatures: string, callback: (result: ResultJSON) => void): void {
+    const context = UTSAndroid.getAppContext() as Application;
+    FaceSDKConfig.init(context);
+    let faceCount = FaceSearchFeatureManger.getInstance(context)
+        .insertFeatures(jsonFaceFeatures);
+    callback({ code: faceCount, msg: "code值为有效同步数据量", faceFeature: "", faceBase64: "-" } as ResultJSON);
+}
+export function deleteFaceSearchFeature(faceID: string, callback: (result: ResultJSON) => void): void {
+    const context = UTSAndroid.getAppContext() as Application;
+    FaceSDKConfig.init(context);
+    FaceSearchFeatureManger.getInstance(context).deleteFaceFaceFeature(faceID);
+    callback({ code: 1, msg: "delete success", faceFeature: "", faceBase64: "" } as ResultJSON);
+}
+export function queryFaceSearchFeature(faceID: string, callback: (jsonResult: string) => void): void {
+    const context = UTSAndroid.getAppContext() as Application;
+    FaceSDKConfig.init(context);
+    try {
+        const manager = FaceSearchFeatureManger.getInstance(context);
+        let nativeResult: any | null = null;
+        if (faceID == "") {
+            nativeResult = manager.queryAllFaceFaceFeature();
+        }
+        else {
+            nativeResult = manager.queryFaceFeatureByID(faceID);
+        }
+        let jsonString = "[]";
+        if (nativeResult != null) {
+            jsonString = new Gson().toJson(nativeResult);
+        }
+        callback(jsonString);
+    }
+    catch (e: any) {
+        callback("[]");
+    }
+}
+/**
+ * Base64人脸图录入人脸
+ * 建议640*480 人脸图需要遵守规范：https://i.postimg.cc/RCwNy0kV/add-Face.jpg
+ */
+export function addFaceSearchFeatureByImage(faceID: string, base64FaceImage: string, callback: (result: ResultJSON) => void): void {
+    const context = UTSAndroid.getUniActivity() as Activity;
+    FaceSDKConfig.init(context);
+    FaceAISDKNative.getFaceFeatureByImageNative(context, faceID, base64FaceImage, (result: UTSJSONObject) => {
+        callback({
+            code: (result.getNumber("code") ?? -1) as number,
+            msg: result.getString("msg") ?? "",
+            faceFeature: result.getString("faceFeature") ?? "",
+            faceBase64: ""
+        } as ResultJSON);
+    });
+}
+/**
+ * 通过SDK相机录入人脸，推荐
+ */
+export function addFaceSearchFeatureByCamera(faceID: string, addFacePerformanceMode: number, needShowConfirmDialog: boolean, callback: (result: ResultJSON) => void): void {
+    UTSAndroid.getUniActivity()!.runOnUiThread(() => {
+        const context = UTSAndroid.getUniActivity() as Activity;
+        FaceSDKConfig.init(context);
+        const intent = new Intent(context, AddFaceFeatureActivity().javaClass);
+        intent.putExtra("ADD_FACE_IMAGE_TYPE_KEY", "FACE_SEARCH");
+        intent.putExtra("ADD_FACE_PERFORMANCE_MODE", addFacePerformanceMode);
+        intent.putExtra("USER_FACE_ID_KEY", faceID);
+        intent.putExtra("NEED_CONFIRM_ADD_FACE", needShowConfirmDialog);
+        context.startActivityForResult(intent, 10086);
+    });
+    UTSAndroid.onAppActivityResult((requestCode: Int, resultCode: Int, intentAct?: Intent) => {
+        if (requestCode == 10086) {
+            if (intentAct != null) {
+                const codeNow = intentAct.getIntExtra("code", 0);
+                const rawMsg = intentAct.getStringExtra("msg");
+                const msgNow = (rawMsg == null) ? "" : rawMsg;
+                let faceBase64 = "";
+                let faceFeature = "";
+                if (0 != codeNow) {
+                    faceBase64 = BitmapUtils.bitmapToBase64(FaceSDKConfig.CACHE_SEARCH_FACE_DIR + faceID);
+                    faceFeature = intentAct.getStringExtra("faceFeature") ?? "";
+                }
+                callback({ code: codeNow, msg: msgNow, faceFeature: faceFeature, faceBase64: faceBase64 } as ResultJSON);
+            }
+            else {
+                callback({ code: -1, msg: "添加失败", faceFeature: "", faceBase64: "" } as ResultJSON);
+            }
+        }
+    });
+}
+//# sourceMappingURL=index.uts.map

@@ -1,0 +1,38 @@
+{
+  "version": "1",
+  "env": {
+    "compilerVersion": "5.07"
+  },
+  "files": {
+    "utssdk/app-android/index.uts": {
+      "md5": "287efeebd72c758b33128d6bcd4155a1"
+    },
+    "utssdk/interface.uts": {
+      "md5": "d2c139832e74a8fd2bbdc8a6cf51b970"
+    },
+    "package.json": {
+      "md5": "bbd2a1683ccc0dfdb6957467e708b811"
+    },
+    "utssdk/app-android/AndroidManifest.xml": {
+      "md5": "66bbdfcf180bbdea5ead3734add4cc70"
+    },
+    "utssdk/app-android/config.json": {
+      "md5": "4d5b2cfdac86ad53a3d82b414d068aab"
+    },
+    "utssdk/app-android/FaceAISDKNative.kt": {
+      "md5": "1a271be64e730cf392a55d88331c2252"
+    },
+    "utssdk/app-android/FaceResultManager.kt": {
+      "md5": "ab00a0a82dc3830167a05f370376b440"
+    },
+    "utssdk/app-android/FaceSearchActivity.java": {
+      "md5": "8d5ca311e20934488f13bd2e6adca9c4"
+    },
+    "utssdk/app-android/libs/FaceSDKLib-release.aar": {
+      "md5": "cc9db0814f649de74a5bc43282411156"
+    },
+    "utssdk/app-android/res/values/colors.xml": {
+      "md5": "4bac3083c64698798abaff8db80f58e0"
+    }
+  }
+}

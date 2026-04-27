@@ -1,0 +1,34 @@
+{
+  "id": "__UNI__D755185",
+  "name": "人脸搜索识别FaceAISDK-sample",
+  "description": "1:N人脸搜索识别+活体检测Beta",
+  "version": {
+    "name": "2026.04.22",
+    "code": "20260422"
+  },
+  "uni-app-x": {
+    "compilerVersion": "5.07"
+  },
+  "app-android": {
+    "distribute": {
+      "modules": {},
+      "icons": {
+        "hdpi": "",
+        "xhdpi": "",
+        "xxhdpi": "",
+        "xxxhdpi": ""
+      },
+      "debuggable": true,
+      "splashScreens": {
+        "default": {}
+      },
+      "minSdkVersion": "21",
+      "targetSdkVersion": "36",
+      "abiFilters": [
+        "arm64-v8a",
+        "armeabi-v7a"
+      ],
+      "manifestExtra": "<application android:extractNativeLibs=\"true\" />"
+    }
+  }
+}
