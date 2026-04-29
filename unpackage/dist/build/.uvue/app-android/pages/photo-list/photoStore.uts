@@ -1,0 +1,63 @@
+export type FacePhotoRecord = {
+    id: string;
+    createdAt: number;
+    imageBase64: string;
+    matched: boolean;
+    faceName: string;
+    faceScore: number;
+};
+const PHOTO_STORAGE_KEY = 'face_search_photo_records';
+function toFacePhotoRecord(item: UTSJSONObject): FacePhotoRecord {
+    return {
+        id: item.getString('id') ?? '',
+        createdAt: item.getNumber('createdAt') ?? 0,
+        imageBase64: item.getString('imageBase64') ?? '',
+        matched: item.getBoolean('matched') ?? false,
+        faceName: item.getString('faceName') ?? '',
+        faceScore: item.getNumber('faceScore') ?? 0,
+    } as FacePhotoRecord;
+}
+function parsePhotoRecords(raw: string): FacePhotoRecord[] {
+    if (raw.length == 0) {
+        return [] as FacePhotoRecord[];
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed == null || !Array.isArray(parsed)) {
+            return [] as FacePhotoRecord[];
+        }
+        const records = [] as FacePhotoRecord[];
+        for (const item of parsed as any[]) {
+            if (item instanceof UTSJSONObject) {
+                records.push(toFacePhotoRecord(item as UTSJSONObject));
+            }
+        }
+        return records;
+    }
+    catch (e: any) {
+        console.error('parsePhotoRecords failed', e);
+        return [] as FacePhotoRecord[];
+    }
+}
+export function getAllFacePhotoRecords(): FacePhotoRecord[] {
+    const raw = uni.getStorageSync(PHOTO_STORAGE_KEY);
+    if (typeof raw == 'string') {
+        return parsePhotoRecords(raw as string);
+    }
+    return [] as FacePhotoRecord[];
+}
+export function saveFacePhotoRecord(imageBase64: string, matched: boolean, faceName: string, faceScore: number): void {
+    if (imageBase64.length == 0) {
+        return;
+    }
+    const records = getAllFacePhotoRecords();
+    records.unshift({
+        id: `${Date.now()}_${Math.random()}`,
+        createdAt: Date.now(),
+        imageBase64,
+        matched,
+        faceName,
+        faceScore,
+    } as FacePhotoRecord);
+    uni.setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(records));
+}

@@ -11,6 +11,7 @@ import io.dcloud.uts.Map
 import io.dcloud.uts.Set
 import io.dcloud.uts.UTSAndroid
 import kotlin.properties.Delegates
+import io.dcloud.uniapp.extapi.navigateTo as uni_navigateTo
 import uts.sdk.modules.FaceAISearch.startFaceSearch
 import uts.sdk.modules.FaceAISearch.switchCamera
 import uts.sdk.modules.FaceAISearch.insertFaceSearchFeature
@@ -22,15 +23,16 @@ import uts.sdk.modules.FaceAISearch.queryFaceSearchFeature
 import uts.sdk.modules.FaceAISearch.toastMessage
 import uts.sdk.modules.FaceAISearch.ResultJSON
 open class GenPagesIndexIndex : BasePage {
-    constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
-        onLoad(fun(_: OnLoadOptions) {}, __ins)
-    }
+    constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {}
     @Suppress("UNUSED_PARAMETER", "UNUSED_VARIABLE")
     override fun `$render`(): Any? {
         val _ctx = this
         val _cache = this.`$`.renderCache
-        return _cE("view", null, _uA(
+        return _cE("view", _uM("class" to "page"), _uA(
             _cE("button", _uM("class" to "gray-button", "onClick" to _ctx.startFaceSearchDemo), "1:N人脸搜索识别", 8, _uA(
+                "onClick"
+            )),
+            _cE("button", _uM("class" to "gray-button", "onClick" to _ctx.openPhotoList), "查看所有照片", 8, _uA(
                 "onClick"
             )),
             _cE("button", _uM("class" to "gray-button", "onClick" to _ctx.addFaceSearchFeatureByCameraDemo), "SDK相机录入人脸信息", 8, _uA(
@@ -55,7 +57,7 @@ open class GenPagesIndexIndex : BasePage {
                 "onClick"
             )),
             _cE("view", _uM("class" to "result-box"), _uA(
-                _cE("view", null, " Email: FaceAISDK.Service@gmail.com"),
+                _cE("view", _uM("class" to "contact-text"), "Email: FaceAISDK.Service@gmail.com"),
                 _cE("scroll-view", _uM("scroll-y" to "true", "class" to "scroll-view-box"), _uA(
                     _cE("text", _uM("class" to "text-content"), _tD(_ctx.faceSearchResult), 1)
                 ))
@@ -70,6 +72,26 @@ open class GenPagesIndexIndex : BasePage {
     override fun data(): Map<String, Any?> {
         return _uM("faceID" to "Test", "faceFeature" to "faceFeature is a string with lenth 1024", "faceSearchResult" to "faceSearchResult", "base64FaceImage" to uni.UNID755185.base64FaceImage as String)
     }
+    open var openPhotoList = ::gen_openPhotoList_fn
+    open fun gen_openPhotoList_fn() {
+        uni_navigateTo(NavigateToOptions(url = "/pages/photo-list/index"))
+    }
+    open var saveSearchPhoto = ::gen_saveSearchPhoto_fn
+    open fun gen_saveSearchPhoto_fn(base64: String, results: UTSArray<UTSJSONObject>?) {
+        if (base64.length == 0) {
+            return
+        }
+        var matched = false
+        var faceName = ""
+        var faceScore: Number = 0
+        if (results != null && results.length > 0) {
+            matched = true
+            val firstFace = results[0]
+            faceName = firstFace.getString("faceName") ?: ""
+            faceScore = firstFace.getNumber("faceScore") ?: 0
+        }
+        saveFacePhotoRecord(base64, matched, faceName, faceScore)
+    }
     open var startFaceSearchDemo = ::gen_startFaceSearchDemo_fn
     open fun gen_startFaceSearchDemo_fn() {
         val threshold: Number = 0.85
@@ -81,10 +103,10 @@ open class GenPagesIndexIndex : BasePage {
             try {
                 val root = JSON.parse(jsonStr) as UTSJSONObject
                 val results = root.getArray<UTSJSONObject>("data")
-                console.log("收到搜索结果:", results)
-                this.faceSearchResult = "【人脸搜索回调】\n " + JSON.stringify(results)
                 val base64 = root.getString("base64") ?: ""
-                val liveness = root.getNumber("liveness")
+                console.log("收到搜索结果:", results)
+                this.faceSearchResult = "【人脸搜索回调】\n" + JSON.stringify(results)
+                this.saveSearchPhoto(base64, results)
                 if (results != null && results.length > 0) {
                     val firstFace = results[0]
                     val name = firstFace.getString("faceName")
@@ -168,7 +190,7 @@ open class GenPagesIndexIndex : BasePage {
         }
         val styles0: Map<String, Map<String, Map<String, Any>>>
             get() {
-                return _uM("result-box" to _pS(_uM("marginTop" to "20rpx", "marginRight" to "20rpx", "marginBottom" to "20rpx", "marginLeft" to "20rpx")), "scroll-view-box" to _pS(_uM("height" to "400rpx", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#cccccc", "borderRightColor" to "#cccccc", "borderBottomColor" to "#cccccc", "borderLeftColor" to "#cccccc", "borderTopLeftRadius" to "10rpx", "borderTopRightRadius" to "10rpx", "borderBottomRightRadius" to "10rpx", "borderBottomLeftRadius" to "10rpx", "backgroundColor" to "#f8f8f8", "paddingTop" to "15rpx", "paddingRight" to "15rpx", "paddingBottom" to "15rpx", "paddingLeft" to "15rpx", "boxSizing" to "border-box")), "text-content" to _pS(_uM("fontSize" to "28rpx", "color" to "#333333", "whiteSpace" to "pre-wrap")), "gray-button" to _pS(_uM("backgroundColor" to "#ffffff", "color" to "#800080", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000")))
+                return _uM("page" to _pS(_uM("paddingBottom" to "30rpx")), "result-box" to _pS(_uM("marginTop" to "20rpx", "marginRight" to "20rpx", "marginBottom" to "20rpx", "marginLeft" to "20rpx")), "contact-text" to _pS(_uM("fontSize" to "28rpx", "color" to "#475569", "marginBottom" to "12rpx")), "scroll-view-box" to _pS(_uM("height" to "400rpx", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopColor" to "#cccccc", "borderRightColor" to "#cccccc", "borderBottomColor" to "#cccccc", "borderLeftColor" to "#cccccc", "borderTopLeftRadius" to "10rpx", "borderTopRightRadius" to "10rpx", "borderBottomRightRadius" to "10rpx", "borderBottomLeftRadius" to "10rpx", "backgroundColor" to "#f8f8f8", "paddingTop" to "15rpx", "paddingRight" to "15rpx", "paddingBottom" to "15rpx", "paddingLeft" to "15rpx", "boxSizing" to "border-box")), "text-content" to _pS(_uM("fontSize" to "28rpx", "color" to "#333333", "whiteSpace" to "pre-wrap")), "gray-button" to _pS(_uM("backgroundColor" to "#ffffff", "color" to "#800080", "borderTopWidth" to "medium", "borderRightWidth" to "medium", "borderBottomWidth" to "medium", "borderLeftWidth" to "medium", "borderTopStyle" to "none", "borderRightStyle" to "none", "borderBottomStyle" to "none", "borderLeftStyle" to "none", "borderTopColor" to "#000000", "borderRightColor" to "#000000", "borderBottomColor" to "#000000", "borderLeftColor" to "#000000", "marginTop" to "12rpx", "marginRight" to "20rpx", "marginBottom" to "12rpx", "marginLeft" to "20rpx")))
             }
         var inheritAttrs = true
         var inject: Map<String, Map<String, Any?>> = _uM()

@@ -24,8 +24,10 @@ export class UniAppConfig extends io.dcloud.uniapp.appframe.AppConfig {
 }
 
 import GenPagesIndexIndexClass from './pages/index/index.uvue'
+import GenPagesPhotoListIndexClass from './pages/photo-list/index.uvue'
 function definePageRoutes() {
 __uniRoutes.push({ path: "pages/index/index", component: GenPagesIndexIndexClass, meta: { isQuit: true } as UniPageMeta, style: _uM([["navigationBarTitleText","人脸搜索识别"]]) } as UniPageRoute)
+__uniRoutes.push({ path: "pages/photo-list/index", component: GenPagesPhotoListIndexClass, meta: { isQuit: false } as UniPageMeta, style: _uM([["navigationBarTitleText","所有照片"]]) } as UniPageRoute)
 }
 const __uniTabBar: Map<string, any | null> | null = null
 const __uniLaunchPage: Map<string, any | null> = _uM([["url","pages/index/index"],["style",_uM([["navigationBarTitleText","人脸搜索识别"]])]])

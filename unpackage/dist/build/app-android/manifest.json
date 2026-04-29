@@ -12,8 +12,9 @@
   "app-android": {
     "distribute": {
       "modules": {
-        "uni-exit": {},
-        "uni-prompt": {}
+        "uni-storage": {},
+        "uni-prompt": {},
+        "uni-exit": {}
       },
       "icons": {
         "hdpi": "",
