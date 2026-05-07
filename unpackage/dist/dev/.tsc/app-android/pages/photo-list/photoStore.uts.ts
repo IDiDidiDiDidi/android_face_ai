@@ -1,3 +1,7 @@
+
+import File from 'java.io.File'
+
+
 export type FacePhotoRecord = {
 	id: string
 	createdAt: number
@@ -40,7 +44,7 @@ function parsePhotoRecords(raw: string): FacePhotoRecord[] {
 		}
 		return records
 	} catch (e) {
-		__f__('error','at pages/photo-list/photoStore.uts:43','parsePhotoRecords failed', e)
+		__f__('error','at pages/photo-list/photoStore.uts:47','parsePhotoRecords failed', e)
 		return [] as FacePhotoRecord[]
 	}
 }
@@ -76,4 +80,72 @@ export function saveFacePhotoRecord(
 	} as FacePhotoRecord)
 
 	uni.setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(records))
+}
+
+function normalizeLocalImagePath(imagePath: string): string {
+	if (imagePath.startsWith('file://')) {
+		return imagePath.substring(7)
+	}
+	return imagePath
+}
+
+function deleteLocalImageFile(imagePath: string): boolean {
+	if (imagePath.length == 0) {
+		return true
+	}
+
+	const normalizedPath = normalizeLocalImagePath(imagePath)
+	if (normalizedPath.length == 0) {
+		return true
+	}
+
+
+	try {
+		const file = new File(normalizedPath)
+		if (!file.exists()) {
+			return true
+		}
+		file.delete()
+		return true
+	} catch (e) {
+		__f__('error','at pages/photo-list/photoStore.uts:111','deleteLocalImageFile failed', e)
+		return false
+	}
+
+
+	return true
+}
+
+export function deleteFacePhotoRecord(recordId: string): boolean {
+	if (recordId.length == 0) {
+		return false
+	}
+
+	const records = getAllFacePhotoRecords()
+	const nextRecords = [] as FacePhotoRecord[]
+	let targetRecord: FacePhotoRecord | null = null
+
+	for (const item of records) {
+		if (item.id == recordId) {
+			targetRecord = item
+			continue
+		}
+		nextRecords.push(item)
+	}
+
+	if (targetRecord == null) {
+		return false
+	}
+
+	if (targetRecord.imagePath.length > 0 && !deleteLocalImageFile(targetRecord.imagePath)) {
+		return false
+	}
+
+	try {
+		uni.setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(nextRecords))
+		return true
+	} catch (e) {
+		__f__('error','at pages/photo-list/photoStore.uts:148','deleteFacePhotoRecord failed', e)
+		return false
+	}
 }

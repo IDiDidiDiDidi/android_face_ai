@@ -1,5 +1,6 @@
 'use strict';
 
+require('java.io.File');
 require('vue');
 
 uni;

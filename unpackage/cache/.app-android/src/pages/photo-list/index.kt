@@ -12,6 +12,8 @@ import io.dcloud.uts.Map
 import io.dcloud.uts.Set
 import io.dcloud.uts.UTSAndroid
 import kotlin.properties.Delegates
+import io.dcloud.uniapp.extapi.showModal as uni_showModal
+import io.dcloud.uniapp.extapi.showToast as uni_showToast
 open class GenPagesPhotoListIndex : BasePage {
     constructor(__ins: ComponentInternalInstance, __renderer: String?) : super(__ins, __renderer) {
         onPageShow(fun() {
@@ -25,45 +27,110 @@ open class GenPagesPhotoListIndex : BasePage {
         val _cache = this.`$`.renderCache
         return _cE("view", _uM("class" to "page"), _uA(
             _cE("scroll-view", _uM("scroll-y" to "true", "class" to "scroll-view"), _uA(
-                if (_ctx.photoRecords.length == 0) {
-                    _cE("view", _uM("key" to 0, "class" to "empty-box"), _uA(
-                        _cE("text", _uM("class" to "empty-title"), "还没有识别抓拍照片"),
-                        _cE("text", _uM("class" to "empty-desc"), "开始 1:N 人脸识别后，抓拍照片会自动保存在这里。")
-                    ))
-                } else {
-                    _cC("v-if", true)
-                }
-                ,
-                _cE(Fragment, null, RenderHelpers.renderList(_ctx.photoRecords, fun(item, __key, __index, _cached): Any {
-                    return _cE("view", _uM("key" to item.id, "class" to "photo-card"), _uA(
-                        _cE("image", _uM("class" to "photo-image", "src" to _ctx.getImageSrc(item), "mode" to "widthFix"), null, 8, _uA(
+                _cE("view", _uM("class" to "content"), _uA(
+                    if (_ctx.photoRecords.length == 0) {
+                        _cE("view", _uM("key" to 0, "class" to "empty-box"), _uA(
+                            _cE("text", _uM("class" to "empty-title"), "还没有识别抓拍照片"),
+                            _cE("text", _uM("class" to "empty-desc"), "开始 1:N 人脸识别后，抓拍照片会自动保存在这里。")
+                        ))
+                    } else {
+                        _cC("v-if", true)
+                    }
+                    ,
+                    _cE(Fragment, null, RenderHelpers.renderList(_ctx.photoRecords, fun(item, __key, __index, _cached): Any {
+                        return _cE("view", _uM("key" to item.id, "class" to "photo-card"), _uA(
+                            _cE("image", _uM("class" to "photo-image", "src" to _ctx.getImageSrc(item), "mode" to "widthFix", "onClick" to fun(){
+                                _ctx.openPhotoPreview(item)
+                            }
+                            ), null, 8, _uA(
+                                "src",
+                                "onClick"
+                            )),
+                            _cE("view", _uM("class" to "photo-meta"), _uA(
+                                _cE("text", _uM("class" to "photo-status"), _tD(if (item.matched) {
+                                    "匹配成功"
+                                } else {
+                                    "未匹配到结果"
+                                }
+                                ), 1),
+                                _cE("text", _uM("class" to "photo-time"), _tD(_ctx.formatTime(item.createdAt)), 1),
+                                _cE("text", _uM("class" to "photo-name"), _tD(_ctx.getFaceNameText(item)), 1),
+                                _cE("text", _uM("class" to "photo-score"), _tD(_ctx.getFaceScoreText(item)), 1)
+                            )),
+                            _cE("view", _uM("class" to "photo-actions"), _uA(
+                                _cE("button", _uM("class" to "delete-button", "onClick" to fun(){
+                                    _ctx.handleDeletePhoto(item)
+                                }
+                                ), "删除照片", 8, _uA(
+                                    "onClick"
+                                ))
+                            ))
+                        ))
+                    }
+                    ), 128)
+                ))
+            )),
+            if (isTrue(_ctx.previewVisible)) {
+                _cE("view", _uM("key" to 0, "class" to "preview-mask", "onClick" to _ctx.closePhotoPreview), _uA(
+                    _cE("view", _uM("class" to "preview-body"), _uA(
+                        _cE("image", _uM("class" to "preview-image", "src" to _ctx.previewImageSrc, "mode" to "aspectFit"), null, 8, _uA(
                             "src"
                         )),
-                        _cE("view", _uM("class" to "photo-meta"), _uA(
-                            _cE("text", _uM("class" to "photo-status"), _tD(if (item.matched) {
-                                "匹配成功"
-                            } else {
-                                "未匹配到结果"
-                            }
-                            ), 1),
-                            _cE("text", _uM("class" to "photo-time"), _tD(_ctx.formatTime(item.createdAt)), 1),
-                            _cE("text", _uM("class" to "photo-name"), _tD(_ctx.getFaceNameText(item)), 1),
-                            _cE("text", _uM("class" to "photo-score"), _tD(_ctx.getFaceScoreText(item)), 1)
+                        _cE("button", _uM("class" to "preview-close", "onClick" to _ctx.closePhotoPreview), "关闭", 8, _uA(
+                            "onClick"
                         ))
                     ))
-                }
-                ), 128)
-            ))
+                ), 8, _uA(
+                    "onClick"
+                ))
+            } else {
+                _cC("v-if", true)
+            }
         ))
     }
     open var photoRecords: UTSArray<FacePhotoRecord> by `$data`
+    open var previewVisible: Boolean by `$data`
+    open var previewImageSrc: String by `$data`
     @Suppress("USELESS_CAST")
     override fun data(): Map<String, Any?> {
-        return _uM("photoRecords" to _uA<FacePhotoRecord>())
+        return _uM("photoRecords" to _uA<FacePhotoRecord>(), "previewVisible" to false, "previewImageSrc" to "")
     }
     open var loadPhotoRecords = ::gen_loadPhotoRecords_fn
     open fun gen_loadPhotoRecords_fn() {
         this.photoRecords = getAllFacePhotoRecords()
+    }
+    open var openPhotoPreview = ::gen_openPhotoPreview_fn
+    open fun gen_openPhotoPreview_fn(item: FacePhotoRecord) {
+        val imageSrc = this.getImageSrc(item)
+        if (imageSrc.length == 0) {
+            return
+        }
+        this.previewImageSrc = imageSrc
+        this.previewVisible = true
+    }
+    open var closePhotoPreview = ::gen_closePhotoPreview_fn
+    open fun gen_closePhotoPreview_fn() {
+        this.previewVisible = false
+        this.previewImageSrc = ""
+    }
+    open var handleDeletePhoto = ::gen_handleDeletePhoto_fn
+    open fun gen_handleDeletePhoto_fn(item: FacePhotoRecord) {
+        uni_showModal(ShowModalOptions(title = "删除照片", content = "确认删除这张抓拍照片吗？", confirmText = "删除", cancelText = "取消", success = fun(res){
+            if (!res.confirm) {
+                return
+            }
+            val deleted = deleteFacePhotoRecord(item.id)
+            if (deleted) {
+                if (this.previewVisible && this.previewImageSrc == this.getImageSrc(item)) {
+                    this.closePhotoPreview()
+                }
+                this.loadPhotoRecords()
+                uni_showToast(ShowToastOptions(title = "删除成功", icon = "success"))
+                return
+            }
+            uni_showToast(ShowToastOptions(title = "删除失败", icon = "error"))
+        }
+        ))
     }
     open var formatTime = ::gen_formatTime_fn
     open fun gen_formatTime_fn(timestamp: Number): String {
@@ -108,7 +175,7 @@ open class GenPagesPhotoListIndex : BasePage {
         }
         val styles0: Map<String, Map<String, Map<String, Any>>>
             get() {
-                return _uM("page" to _pS(_uM("flexGrow" to 1, "flexShrink" to 1, "flexBasis" to "0%", "backgroundColor" to "#f5f7fb")), "scroll-view" to _pS(_uM("paddingTop" to "24rpx", "paddingRight" to "24rpx", "paddingBottom" to "24rpx", "paddingLeft" to "24rpx", "boxSizing" to "border-box")), "empty-box" to _pS(_uM("marginTop" to "160rpx", "paddingTop" to "48rpx", "paddingRight" to "36rpx", "paddingBottom" to "48rpx", "paddingLeft" to "36rpx", "borderTopLeftRadius" to "24rpx", "borderTopRightRadius" to "24rpx", "borderBottomRightRadius" to "24rpx", "borderBottomLeftRadius" to "24rpx", "backgroundImage" to "linear-gradient(135deg, #ffffff 0%, #eef3ff 100%)", "backgroundColor" to "rgba(0,0,0,0)", "boxShadow" to "0 12rpx 40rpx rgba(40, 68, 120, 0.08)")), "empty-title" to _pS(_uM("fontSize" to "34rpx", "fontWeight" to "600", "color" to "#1f2a44", "marginBottom" to "16rpx")), "empty-desc" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#60708f")), "photo-card" to _pS(_uM("marginBottom" to "24rpx", "borderTopLeftRadius" to "24rpx", "borderTopRightRadius" to "24rpx", "borderBottomRightRadius" to "24rpx", "borderBottomLeftRadius" to "24rpx", "overflow" to "hidden", "backgroundColor" to "#ffffff", "boxShadow" to "0 12rpx 36rpx rgba(27, 39, 79, 0.08)")), "photo-image" to _pS(_uM("width" to "100%", "backgroundColor" to "#dfe6f5")), "photo-meta" to _pS(_uM("paddingTop" to "24rpx", "paddingRight" to "24rpx", "paddingBottom" to "24rpx", "paddingLeft" to "24rpx")), "photo-status" to _pS(_uM("fontSize" to "30rpx", "lineHeight" to "42rpx", "color" to "#0f6b57", "fontWeight" to "600", "marginBottom" to "10rpx")), "photo-time" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")), "photo-name" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")), "photo-score" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")))
+                return _uM("page" to _pS(_uM("flexGrow" to 1, "flexShrink" to 1, "flexBasis" to "0%", "flexDirection" to "column", "backgroundColor" to "#f5f7fb")), "scroll-view" to _pS(_uM("flexGrow" to 1, "flexShrink" to 1, "flexBasis" to "0%")), "content" to _pS(_uM("paddingTop" to "24rpx", "paddingRight" to "24rpx", "paddingBottom" to "24rpx", "paddingLeft" to "24rpx", "boxSizing" to "border-box")), "empty-box" to _pS(_uM("flexDirection" to "column", "marginTop" to "160rpx", "paddingTop" to "48rpx", "paddingRight" to "36rpx", "paddingBottom" to "48rpx", "paddingLeft" to "36rpx", "borderTopLeftRadius" to "24rpx", "borderTopRightRadius" to "24rpx", "borderBottomRightRadius" to "24rpx", "borderBottomLeftRadius" to "24rpx", "backgroundImage" to "linear-gradient(135deg, #ffffff 0%, #eef3ff 100%)", "backgroundColor" to "rgba(0,0,0,0)", "boxShadow" to "0 12rpx 40rpx rgba(40, 68, 120, 0.08)")), "empty-title" to _pS(_uM("fontSize" to "34rpx", "fontWeight" to "600", "color" to "#1f2a44", "marginBottom" to "16rpx")), "empty-desc" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#60708f")), "photo-card" to _pS(_uM("marginBottom" to "24rpx", "borderTopLeftRadius" to "24rpx", "borderTopRightRadius" to "24rpx", "borderBottomRightRadius" to "24rpx", "borderBottomLeftRadius" to "24rpx", "overflow" to "hidden", "backgroundColor" to "#ffffff", "boxShadow" to "0 12rpx 36rpx rgba(27, 39, 79, 0.08)")), "photo-image" to _pS(_uM("width" to "100%", "backgroundColor" to "#dfe6f5")), "photo-meta" to _pS(_uM("flexDirection" to "column", "paddingTop" to "24rpx", "paddingRight" to "24rpx", "paddingBottom" to "12rpx", "paddingLeft" to "24rpx")), "photo-status" to _pS(_uM("fontSize" to "30rpx", "lineHeight" to "42rpx", "color" to "#0f6b57", "fontWeight" to "600", "marginBottom" to "10rpx")), "photo-time" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")), "photo-name" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")), "photo-score" to _pS(_uM("fontSize" to "28rpx", "lineHeight" to "42rpx", "color" to "#33415c")), "photo-actions" to _pS(_uM("paddingTop" to 0, "paddingRight" to "24rpx", "paddingBottom" to "24rpx", "paddingLeft" to "24rpx", "flexDirection" to "row", "justifyContent" to "flex-end")), "delete-button" to _pS(_uM("backgroundColor" to "#fff1f2", "color" to "#be123c", "borderTopColor" to "#fecdd3", "borderRightColor" to "#fecdd3", "borderBottomColor" to "#fecdd3", "borderLeftColor" to "#fecdd3", "borderTopWidth" to 1, "borderRightWidth" to 1, "borderBottomWidth" to 1, "borderLeftWidth" to 1, "borderTopStyle" to "solid", "borderRightStyle" to "solid", "borderBottomStyle" to "solid", "borderLeftStyle" to "solid", "borderTopLeftRadius" to "999rpx", "borderTopRightRadius" to "999rpx", "borderBottomRightRadius" to "999rpx", "borderBottomLeftRadius" to "999rpx", "fontSize" to "26rpx", "paddingTop" to 0, "paddingRight" to "28rpx", "paddingBottom" to 0, "paddingLeft" to "28rpx", "marginTop" to 0, "marginRight" to 0, "marginBottom" to 0, "marginLeft" to 0)), "preview-mask" to _pS(_uM("position" to "fixed", "left" to 0, "top" to 0, "right" to 0, "bottom" to 0, "backgroundColor" to "rgba(15,23,42,0.92)", "zIndex" to 999, "alignItems" to "center", "justifyContent" to "center", "paddingTop" to "40rpx", "paddingRight" to "40rpx", "paddingBottom" to "40rpx", "paddingLeft" to "40rpx", "boxSizing" to "border-box")), "preview-body" to _pS(_uM("width" to "100%", "height" to "100%", "alignItems" to "center", "justifyContent" to "center")), "preview-image" to _pS(_uM("width" to "100%", "height" to "100%")), "preview-close" to _pS(_uM("position" to "fixed", "top" to "40rpx", "right" to "40rpx", "backgroundColor" to "rgba(255,255,255,0.12)", "color" to "#ffffff", "borderTopLeftRadius" to "999rpx", "borderTopRightRadius" to "999rpx", "borderBottomRightRadius" to "999rpx", "borderBottomLeftRadius" to "999rpx", "fontSize" to "26rpx", "paddingTop" to 0, "paddingRight" to "28rpx", "paddingBottom" to 0, "paddingLeft" to "28rpx", "marginTop" to 0, "marginRight" to 0, "marginBottom" to 0, "marginLeft" to 0)))
             }
         var inheritAttrs = true
         var inject: Map<String, Map<String, Any?>> = _uM()

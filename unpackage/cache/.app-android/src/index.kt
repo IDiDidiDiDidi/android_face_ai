@@ -11,6 +11,7 @@ import io.dcloud.uts.*
 import io.dcloud.uts.Map
 import io.dcloud.uts.Set
 import io.dcloud.uts.UTSAndroid
+import java.io.File
 import kotlin.properties.Delegates
 import io.dcloud.uniapp.extapi.exit as uni_exit
 import io.dcloud.uniapp.extapi.getStorageSync as uni_getStorageSync
@@ -93,7 +94,7 @@ open class FacePhotoRecord (
     open var faceScore: Number,
 ) : UTSReactiveObject(), IUTSSourceMap {
     override fun `__$getOriginalPosition`(): UTSSourceMapPosition? {
-        return UTSSourceMapPosition("FacePhotoRecord", "pages/photo-list/photoStore.uts", 1, 13)
+        return UTSSourceMapPosition("FacePhotoRecord", "pages/photo-list/photoStore.uts", 2, 13)
     }
     override fun __v_create(__v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean): UTSReactiveObject {
         return FacePhotoRecordReactiveObject(this, __v_isReadonly, __v_isShallow, __v_skip)
@@ -207,7 +208,7 @@ fun parsePhotoRecords(raw: String): UTSArray<FacePhotoRecord> {
         return _uA<FacePhotoRecord>()
     }
     try {
-        val parsed = UTSAndroid.consoleDebugError(JSON.parse(raw), " at pages/photo-list/photoStore.uts:27")
+        val parsed = UTSAndroid.consoleDebugError(JSON.parse(raw), " at pages/photo-list/photoStore.uts:28")
         if (parsed == null || !UTSArray.isArray(parsed)) {
             return _uA<FacePhotoRecord>()
         }
@@ -220,7 +221,7 @@ fun parsePhotoRecords(raw: String): UTSArray<FacePhotoRecord> {
         return records
     }
      catch (e: Throwable) {
-        console.error("parsePhotoRecords failed", e, " at pages/photo-list/photoStore.uts:43")
+        console.error("parsePhotoRecords failed", e, " at pages/photo-list/photoStore.uts:47")
         return _uA<FacePhotoRecord>()
     }
 }
@@ -238,6 +239,63 @@ fun saveFacePhotoRecord(imagePath: String, imageBase64: String, matched: Boolean
     val records = getAllFacePhotoRecords()
     records.unshift(FacePhotoRecord(id = "" + Date.now() + "_" + Math.random(), createdAt = Date.now(), imagePath = imagePath, imageBase64 = imageBase64, matched = matched, faceName = faceName, faceScore = faceScore))
     uni_setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(records))
+}
+fun normalizeLocalImagePath(imagePath: String): String {
+    if (imagePath.startsWith("file://")) {
+        return imagePath.substring(7)
+    }
+    return imagePath
+}
+fun deleteLocalImageFile(imagePath: String): Boolean {
+    if (imagePath.length == 0) {
+        return true
+    }
+    val normalizedPath = normalizeLocalImagePath(imagePath)
+    if (normalizedPath.length == 0) {
+        return true
+    }
+    try {
+        val file = File(normalizedPath)
+        if (!file.exists()) {
+            return true
+        }
+        file.`delete`()
+        return true
+    }
+     catch (e: Throwable) {
+        console.error("deleteLocalImageFile failed", e, " at pages/photo-list/photoStore.uts:111")
+        return false
+    }
+    return true
+}
+fun deleteFacePhotoRecord(recordId: String): Boolean {
+    if (recordId.length == 0) {
+        return false
+    }
+    val records = getAllFacePhotoRecords()
+    val nextRecords = _uA<FacePhotoRecord>()
+    var targetRecord: FacePhotoRecord? = null
+    for(item in resolveUTSValueIterator(records)){
+        if (item.id == recordId) {
+            targetRecord = item
+            continue
+        }
+        nextRecords.push(item)
+    }
+    if (targetRecord == null) {
+        return false
+    }
+    if (targetRecord.imagePath.length > 0 && !deleteLocalImageFile(targetRecord.imagePath)) {
+        return false
+    }
+    try {
+        uni_setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(nextRecords))
+        return true
+    }
+     catch (e: Throwable) {
+        console.error("deleteFacePhotoRecord failed", e, " at pages/photo-list/photoStore.uts:148")
+        return false
+    }
 }
 val GenPagesIndexIndexClass = CreateVueComponent(GenPagesIndexIndex::class.java, fun(): VueComponentOptions {
     return VueComponentOptions(type = "page", name = "", inheritAttrs = GenPagesIndexIndex.inheritAttrs, inject = GenPagesIndexIndex.inject, props = GenPagesIndexIndex.props, propsNeedCastKeys = GenPagesIndexIndex.propsNeedCastKeys, emits = GenPagesIndexIndex.emits, components = GenPagesIndexIndex.components, styles = GenPagesIndexIndex.styles)

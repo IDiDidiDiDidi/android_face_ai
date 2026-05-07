@@ -1,30 +1,43 @@
 <template>
 	<view class="page">
 		<scroll-view scroll-y="true" class="scroll-view">
-		<view v-if="photoRecords.length == 0" class="empty-box">
-				<text class="empty-title">还没有识别抓拍照片</text>
-				<text class="empty-desc">开始 1:N 人脸识别后，抓拍照片会自动保存在这里。</text>
-			</view>
-			<view v-for="item in photoRecords" :key="item.id" class="photo-card">
-				<image class="photo-image" :src="getImageSrc(item)" mode="widthFix"></image>
-				<view class="photo-meta">
-					<text class="photo-status">{{ item.matched ? '匹配成功' : '未匹配到结果' }}</text>
-					<text class="photo-time">{{ formatTime(item.createdAt) }}</text>
-					<text class="photo-name">{{ getFaceNameText(item) }}</text>
-					<text class="photo-score">{{ getFaceScoreText(item) }}</text>
+			<view class="content">
+				<view v-if="photoRecords.length == 0" class="empty-box">
+					<text class="empty-title">还没有识别抓拍照片</text>
+					<text class="empty-desc">开始 1:N 人脸识别后，抓拍照片会自动保存在这里。</text>
+				</view>
+				<view v-for="item in photoRecords" :key="item.id" class="photo-card">
+					<image class="photo-image" :src="getImageSrc(item)" mode="widthFix" @tap="openPhotoPreview(item)"></image>
+					<view class="photo-meta">
+						<text class="photo-status">{{ item.matched ? '匹配成功' : '未匹配到结果' }}</text>
+						<text class="photo-time">{{ formatTime(item.createdAt) }}</text>
+						<text class="photo-name">{{ getFaceNameText(item) }}</text>
+						<text class="photo-score">{{ getFaceScoreText(item) }}</text>
+					</view>
+					<view class="photo-actions">
+						<button class="delete-button" @tap="handleDeletePhoto(item)">删除照片</button>
+					</view>
 				</view>
 			</view>
 		</scroll-view>
+		<view v-if="previewVisible" class="preview-mask" @tap="closePhotoPreview">
+			<view class="preview-body">
+				<image class="preview-image" :src="previewImageSrc" mode="aspectFit"></image>
+				<button class="preview-close" @tap="closePhotoPreview">关闭</button>
+			</view>
+		</view>
 	</view>
 </template>
 
 <script lang="uts">
-	import { getAllFacePhotoRecords, type FacePhotoRecord } from './photoStore.uts'
+	import { getAllFacePhotoRecords, deleteFacePhotoRecord, type FacePhotoRecord } from './photoStore.uts'
 
 	export default {
 		data() {
 			return {
 				photoRecords: [] as FacePhotoRecord[],
+				previewVisible: false,
+				previewImageSrc: '',
 			}
 		},
 		onShow() {
@@ -33,6 +46,49 @@
 		methods: {
 			loadPhotoRecords() {
 				this.photoRecords = getAllFacePhotoRecords()
+			},
+			openPhotoPreview(item: FacePhotoRecord) {
+				const imageSrc = this.getImageSrc(item)
+				if (imageSrc.length == 0) {
+					return
+				}
+				this.previewImageSrc = imageSrc
+				this.previewVisible = true
+			},
+			closePhotoPreview() {
+				this.previewVisible = false
+				this.previewImageSrc = ''
+			},
+			handleDeletePhoto(item: FacePhotoRecord) {
+				uni.showModal({
+					title: '删除照片',
+					content: '确认删除这张抓拍照片吗？',
+					confirmText: '删除',
+					cancelText: '取消',
+					success: (res) => {
+						if (!res.confirm) {
+							return
+						}
+
+						const deleted = deleteFacePhotoRecord(item.id)
+						if (deleted) {
+							if (this.previewVisible && this.previewImageSrc == this.getImageSrc(item)) {
+								this.closePhotoPreview()
+							}
+							this.loadPhotoRecords()
+							uni.showToast({
+								title: '删除成功',
+								icon: 'success'
+							})
+							return
+						}
+
+						uni.showToast({
+							title: '删除失败',
+							icon: 'error'
+						})
+					}
+				})
 			},
 			formatTime(timestamp: number): string {
 				const date = new Date(timestamp)
@@ -72,16 +128,21 @@
 <style>
 	.page {
 		flex: 1;
+		flex-direction: column;
 		background-color: #f5f7fb;
 	}
 
 	.scroll-view {
-		height: 100vh;
+		flex: 1;
+	}
+
+	.content {
 		padding: 24rpx;
 		box-sizing: border-box;
 	}
 
 	.empty-box {
+		flex-direction: column;
 		margin-top: 160rpx;
 		padding: 48rpx 36rpx;
 		border-radius: 24rpx;
@@ -90,7 +151,6 @@
 	}
 
 	.empty-title {
-		display: block;
 		font-size: 34rpx;
 		font-weight: 600;
 		color: #1f2a44;
@@ -98,7 +158,6 @@
 	}
 
 	.empty-desc {
-		display: block;
 		font-size: 28rpx;
 		line-height: 42rpx;
 		color: #60708f;
@@ -118,17 +177,74 @@
 	}
 
 	.photo-meta {
+		flex-direction: column;
 		padding: 24rpx;
+		padding-bottom: 12rpx;
 	}
 
 	.photo-status,
 	.photo-time,
 	.photo-name,
 	.photo-score {
-		display: block;
 		font-size: 28rpx;
 		line-height: 42rpx;
 		color: #33415c;
+	}
+
+	.photo-actions {
+		padding: 0 24rpx 24rpx;
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.delete-button {
+		background-color: #fff1f2;
+		color: #be123c;
+		border-color: #fecdd3;
+		border-width: 1px;
+		border-style: solid;
+		border-radius: 999rpx;
+		font-size: 26rpx;
+		padding: 0 28rpx;
+		margin: 0;
+	}
+
+	.preview-mask {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(15, 23, 42, 0.92);
+		z-index: 999;
+		align-items: center;
+		justify-content: center;
+		padding: 40rpx;
+		box-sizing: border-box;
+	}
+
+	.preview-body {
+		width: 100%;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.preview-image {
+		width: 100%;
+		height: 100%;
+	}
+
+	.preview-close {
+		position: fixed;
+		top: 40rpx;
+		right: 40rpx;
+		background-color: rgba(255, 255, 255, 0.12);
+		color: #ffffff;
+		border-radius: 999rpx;
+		font-size: 26rpx;
+		padding: 0 28rpx;
+		margin: 0;
 	}
 
 	.photo-status {
