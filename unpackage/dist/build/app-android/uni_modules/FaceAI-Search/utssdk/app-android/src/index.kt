@@ -39,8 +39,8 @@ open class ResultJSON (
     open var faceBase64: String,
 ) : UTSObject()
 fun startFaceSearch(searchThreshold: Number, searchOneTime: Boolean, searchTimeOut: Number, isCameraSizeHigh: Boolean, searchOne: Boolean, callback: (jsonResult: String) -> Unit): Unit {
-    FaceResultManager.setCallback(fun(json: String, liveness: Number, base64: String){
-        val finalJson = "{\"data\":" + json + ",\"liveness\":" + liveness + ",\"base64\":\"" + base64 + "\"}"
+    FaceResultManager.setCallback(fun(json: String, liveness: Number, base64: String, preCompareImagePath: String, captureAt: Number){
+        val finalJson = "{\"data\":" + json + ",\"liveness\":" + liveness + ",\"base64\":\"" + base64 + "\",\"preCompareImagePath\":\"" + preCompareImagePath + "\",\"captureAt\":" + captureAt + ",\"captureStage\":\"pre_compare\"}"
         try {
             callback(finalJson)
         }

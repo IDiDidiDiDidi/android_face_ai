@@ -1,6 +1,7 @@
 export type FacePhotoRecord = {
     id: string;
     createdAt: number;
+    imagePath: string;
     imageBase64: string;
     matched: boolean;
     faceName: string;
@@ -11,6 +12,7 @@ function toFacePhotoRecord(item: UTSJSONObject): FacePhotoRecord {
     return {
         id: item.getString('id') ?? '',
         createdAt: item.getNumber('createdAt') ?? 0,
+        imagePath: item.getString('imagePath') ?? '',
         imageBase64: item.getString('imageBase64') ?? '',
         matched: item.getBoolean('matched') ?? false,
         faceName: item.getString('faceName') ?? '',
@@ -35,7 +37,7 @@ function parsePhotoRecords(raw: string): FacePhotoRecord[] {
         return records;
     }
     catch (e: any) {
-        __f__('error', 'at pages/photo-list/photoStore.uts:41', 'parsePhotoRecords failed', e);
+        __f__('error', 'at pages/photo-list/photoStore.uts:43', 'parsePhotoRecords failed', e);
         return [] as FacePhotoRecord[];
     }
 }
@@ -46,14 +48,15 @@ export function getAllFacePhotoRecords(): FacePhotoRecord[] {
     }
     return [] as FacePhotoRecord[];
 }
-export function saveFacePhotoRecord(imageBase64: string, matched: boolean, faceName: string, faceScore: number): void {
-    if (imageBase64.length == 0) {
+export function saveFacePhotoRecord(imagePath: string, imageBase64: string, matched: boolean, faceName: string, faceScore: number): void {
+    if (imagePath.length == 0 && imageBase64.length == 0) {
         return;
     }
     const records = getAllFacePhotoRecords();
     records.unshift({
         id: `${Date.now()}_${Math.random()}`,
         createdAt: Date.now(),
+        imagePath,
         imageBase64,
         matched,
         faceName,

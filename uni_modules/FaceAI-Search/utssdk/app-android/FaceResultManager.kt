@@ -6,16 +6,16 @@ package uts.sdk.modules.uniFaceAISDK
 object FaceResultManager {
 
     // 保存回调引用
-    private var internalCallback: ((String, Float, String) -> Unit)? = null
+    private var internalCallback: ((String, Float, String, String, Long) -> Unit)? = null
 
     // UTS 中调用此方法设置回调
-    fun setCallback(cb: (String, Float, String) -> Unit) {
+    fun setCallback(cb: (String, Float, String, String, Long) -> Unit) {
         this.internalCallback = cb
     }
 
     // Java/Kotlin 中调用此方法发送结果
-    fun sendResult(json: String, liveness: Float, base64: String) {
-        internalCallback?.invoke(json, liveness, base64)
+    fun sendResult(json: String, liveness: Float, base64: String, preCompareImagePath: String, captureAt: Long) {
+        internalCallback?.invoke(json, liveness, base64, preCompareImagePath, captureAt)
     }
 	
 }

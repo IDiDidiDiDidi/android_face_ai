@@ -30,8 +30,8 @@
 					url: '/pages/photo-list/index'
 				})
 			},
-			saveSearchPhoto: function (base64: string, results: UTSJSONObject[] | null) {
-				if (base64.length == 0) {
+			saveSearchPhoto: function (imagePath: string, base64: string, results: UTSJSONObject[] | null) {
+				if (imagePath.length == 0 && base64.length == 0) {
 					return
 				}
 
@@ -45,7 +45,8 @@
 					faceScore = firstFace.getNumber("faceScore") ?? 0
 				}
 
-				saveFacePhotoRecord(base64, matched, faceName, faceScore)
+				const fallbackBase64 = imagePath.length > 0 ? '' : base64
+				saveFacePhotoRecord(imagePath, fallbackBase64, matched, faceName, faceScore)
 			},
 			startFaceSearchDemo: function () {
 				const threshold = 0.85
@@ -61,13 +62,14 @@
 					searchOne,
 					(jsonStr: string) => {
 						try {
-							const root = UTSAndroid.consoleDebugError(JSON.parse(jsonStr), " at pages/index/index.uvue:85") as UTSJSONObject
+							const root = UTSAndroid.consoleDebugError(JSON.parse(jsonStr), " at pages/index/index.uvue:86") as UTSJSONObject
 							const results = root.getArray<UTSJSONObject>("data")
 							const base64 = root.getString("base64") ?? ""
+							const preCompareImagePath = root.getString("preCompareImagePath") ?? ""
 
-							console.log("收到搜索结果:", results, " at pages/index/index.uvue:89")
+							console.log("收到搜索结果:", results, " at pages/index/index.uvue:91")
 							this.faceSearchResult = "【人脸搜索回调】\n" + JSON.stringify(results)
-							this.saveSearchPhoto(base64, results)
+							this.saveSearchPhoto(preCompareImagePath, base64, results)
 
 							if (results != null && results.length > 0) {
 								const firstFace = results[0]
@@ -83,7 +85,7 @@
 								}
 							}
 						} catch (e) {
-							console.error("解析数据失败:", e, " at pages/index/index.uvue:107")
+							console.error("解析数据失败:", e, " at pages/index/index.uvue:109")
 						}
 					}
 				)
@@ -94,7 +96,7 @@
 					1,
 					true,
 					(result: ResultJSON) => {
-						console.log("result:", result, " at pages/index/index.uvue:118")
+						console.log("result:", result, " at pages/index/index.uvue:120")
 						this.faceSearchResult = JSON.stringify(result, ['code', 'msg', 'faceBase64'], 4)
 					}
 				)
@@ -104,7 +106,7 @@
 					this.faceID,
 					this.base64FaceImage,
 					(result: ResultJSON) => {
-						console.log("result:", result, " at pages/index/index.uvue:128")
+						console.log("result:", result, " at pages/index/index.uvue:130")
 						this.faceSearchResult = JSON.stringify(result, ['code', 'msg', 'faceBase64'], 4)
 					}
 				)

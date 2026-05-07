@@ -1,6 +1,7 @@
 export type FacePhotoRecord = {
 	id: string
 	createdAt: number
+	imagePath: string
 	imageBase64: string
 	matched: boolean
 	faceName: string
@@ -13,6 +14,7 @@ function toFacePhotoRecord(item: UTSJSONObject): FacePhotoRecord {
 	return {
 		id: item.getString('id') ?? '',
 		createdAt: item.getNumber('createdAt') ?? 0,
+		imagePath: item.getString('imagePath') ?? '',
 		imageBase64: item.getString('imageBase64') ?? '',
 		matched: item.getBoolean('matched') ?? false,
 		faceName: item.getString('faceName') ?? '',
@@ -52,12 +54,13 @@ export function getAllFacePhotoRecords(): FacePhotoRecord[] {
 }
 
 export function saveFacePhotoRecord(
+	imagePath: string,
 	imageBase64: string,
 	matched: boolean,
 	faceName: string,
 	faceScore: number
 ): void {
-	if (imageBase64.length == 0) {
+	if (imagePath.length == 0 && imageBase64.length == 0) {
 		return
 	}
 
@@ -65,6 +68,7 @@ export function saveFacePhotoRecord(
 	records.unshift({
 		id: `${Date.now()}_${Math.random()}`,
 		createdAt: Date.now(),
+		imagePath,
 		imageBase64,
 		matched,
 		faceName,

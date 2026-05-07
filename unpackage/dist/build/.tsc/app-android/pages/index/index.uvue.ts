@@ -30,8 +30,8 @@
 					url: '/pages/photo-list/index'
 				})
 			},
-			saveSearchPhoto: function (base64: string, results: UTSJSONObject[] | null) {
-				if (base64.length == 0) {
+			saveSearchPhoto: function (imagePath: string, base64: string, results: UTSJSONObject[] | null) {
+				if (imagePath.length == 0 && base64.length == 0) {
 					return
 				}
 
@@ -45,7 +45,8 @@
 					faceScore = firstFace.getNumber("faceScore") ?? 0
 				}
 
-				saveFacePhotoRecord(base64, matched, faceName, faceScore)
+				const fallbackBase64 = imagePath.length > 0 ? '' : base64
+				saveFacePhotoRecord(imagePath, fallbackBase64, matched, faceName, faceScore)
 			},
 			startFaceSearchDemo: function () {
 				const threshold = 0.85
@@ -64,10 +65,11 @@
 							const root = JSON.parse(jsonStr) as UTSJSONObject
 							const results = root.getArray<UTSJSONObject>("data")
 							const base64 = root.getString("base64") ?? ""
+							const preCompareImagePath = root.getString("preCompareImagePath") ?? ""
 
 							console.log("收到搜索结果:", results)
 							this.faceSearchResult = "【人脸搜索回调】\n" + JSON.stringify(results)
-							this.saveSearchPhoto(base64, results)
+							this.saveSearchPhoto(preCompareImagePath, base64, results)
 
 							if (results != null && results.length > 0) {
 								const firstFace = results[0]

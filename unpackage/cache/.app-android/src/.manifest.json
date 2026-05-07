@@ -5,16 +5,16 @@
   },
   "files": {
     "index.kt": {
-      "class": "",
-      "md5": "28593751bd59e2100ba8e4aa9d61131f2480deda"
+      "md5": "5a110a206596443055178d586f51c6bb56758088",
+      "class": ""
     },
     "pages/index/index.kt": {
-      "md5": "161fcf19f8f95f00546fb45599f6869a1266db9f",
-      "class": "GenPagesIndexIndex"
+      "class": "GenPagesIndexIndex",
+      "md5": "09934864c21f945de219cc58ba18d825cde26c85"
     },
     "pages/photo-list/index.kt": {
-      "class": "GenPagesPhotoListIndex",
-      "md5": "668d4535a816726628cdb774745023a4133917f2"
+      "md5": "8934f528b2108db81a1f2af9243423ee9a7b3dbe",
+      "class": "GenPagesPhotoListIndex"
     }
   }
 }

@@ -78,8 +78,8 @@ open class GenPagesIndexIndex : BasePage {
         uni_navigateTo(NavigateToOptions(url = "/pages/photo-list/index"))
     }
     open var saveSearchPhoto = ::gen_saveSearchPhoto_fn
-    open fun gen_saveSearchPhoto_fn(base64: String, results: UTSArray<UTSJSONObject>?) {
-        if (base64.length == 0) {
+    open fun gen_saveSearchPhoto_fn(imagePath: String, base64: String, results: UTSArray<UTSJSONObject>?) {
+        if (imagePath.length == 0 && base64.length == 0) {
             return
         }
         var matched = false
@@ -91,7 +91,12 @@ open class GenPagesIndexIndex : BasePage {
             faceName = firstFace.getString("faceName") ?: ""
             faceScore = firstFace.getNumber("faceScore") ?: 0
         }
-        saveFacePhotoRecord(base64, matched, faceName, faceScore)
+        val fallbackBase64 = if (imagePath.length > 0) {
+            ""
+        } else {
+            base64
+        }
+        saveFacePhotoRecord(imagePath, fallbackBase64, matched, faceName, faceScore)
     }
     open var startFaceSearchDemo = ::gen_startFaceSearchDemo_fn
     open fun gen_startFaceSearchDemo_fn() {
@@ -102,12 +107,13 @@ open class GenPagesIndexIndex : BasePage {
         val searchOne = true
         startFaceSearch(threshold, oneTime, searchTimeOut, highRes, searchOne, fun(jsonStr: String){
             try {
-                val root = UTSAndroid.consoleDebugError(JSON.parse(jsonStr), " at pages/index/index.uvue:85") as UTSJSONObject
+                val root = UTSAndroid.consoleDebugError(JSON.parse(jsonStr), " at pages/index/index.uvue:86") as UTSJSONObject
                 val results = root.getArray<UTSJSONObject>("data")
                 val base64 = root.getString("base64") ?: ""
-                console.log("收到搜索结果:", results, " at pages/index/index.uvue:89")
+                val preCompareImagePath = root.getString("preCompareImagePath") ?: ""
+                console.log("收到搜索结果:", results, " at pages/index/index.uvue:91")
                 this.faceSearchResult = "【人脸搜索回调】\n" + JSON.stringify(results)
-                this.saveSearchPhoto(base64, results)
+                this.saveSearchPhoto(preCompareImagePath, base64, results)
                 if (results != null && results.length > 0) {
                     val firstFace = results[0]
                     val name = firstFace.getString("faceName")
@@ -122,7 +128,7 @@ open class GenPagesIndexIndex : BasePage {
                 }
             }
              catch (e: Throwable) {
-                console.error("解析数据失败:", e, " at pages/index/index.uvue:107")
+                console.error("解析数据失败:", e, " at pages/index/index.uvue:109")
             }
         }
         )
@@ -130,7 +136,7 @@ open class GenPagesIndexIndex : BasePage {
     open var addFaceSearchFeatureByCameraDemo = ::gen_addFaceSearchFeatureByCameraDemo_fn
     open fun gen_addFaceSearchFeatureByCameraDemo_fn() {
         addFaceSearchFeatureByCamera(this.faceID, 1, true, fun(result: ResultJSON){
-            console.log("result:", result, " at pages/index/index.uvue:118")
+            console.log("result:", result, " at pages/index/index.uvue:120")
             this.faceSearchResult = JSON.stringify(result, _uA(
                 "code",
                 "msg",
@@ -142,7 +148,7 @@ open class GenPagesIndexIndex : BasePage {
     open var addFaceSearchFeatureByImageDemo = ::gen_addFaceSearchFeatureByImageDemo_fn
     open fun gen_addFaceSearchFeatureByImageDemo_fn() {
         addFaceSearchFeatureByImage(this.faceID, this.base64FaceImage, fun(result: ResultJSON){
-            console.log("result:", result, " at pages/index/index.uvue:128")
+            console.log("result:", result, " at pages/index/index.uvue:130")
             this.faceSearchResult = JSON.stringify(result, _uA(
                 "code",
                 "msg",

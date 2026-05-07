@@ -81,6 +81,8 @@ open class FacePhotoRecord (
     @JsonNotNull
     open var createdAt: Number,
     @JsonNotNull
+    open var imagePath: String,
+    @JsonNotNull
     open var imageBase64: String,
     @JsonNotNull
     open var matched: Boolean = false,
@@ -98,7 +100,7 @@ class FacePhotoRecordReactiveObject : FacePhotoRecord, IUTSReactive<FacePhotoRec
     override var __v_isReadonly: Boolean
     override var __v_isShallow: Boolean
     override var __v_skip: Boolean
-    constructor(__v_raw: FacePhotoRecord, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, createdAt = __v_raw.createdAt, imageBase64 = __v_raw.imageBase64, matched = __v_raw.matched, faceName = __v_raw.faceName, faceScore = __v_raw.faceScore) {
+    constructor(__v_raw: FacePhotoRecord, __v_isReadonly: Boolean, __v_isShallow: Boolean, __v_skip: Boolean) : super(id = __v_raw.id, createdAt = __v_raw.createdAt, imagePath = __v_raw.imagePath, imageBase64 = __v_raw.imageBase64, matched = __v_raw.matched, faceName = __v_raw.faceName, faceScore = __v_raw.faceScore) {
         this.__v_raw = __v_raw
         this.__v_isReadonly = __v_isReadonly
         this.__v_isShallow = __v_isShallow
@@ -130,6 +132,18 @@ class FacePhotoRecordReactiveObject : FacePhotoRecord, IUTSReactive<FacePhotoRec
             val oldValue = __v_raw.createdAt
             __v_raw.createdAt = value
             _tRS(__v_raw, "createdAt", oldValue, value)
+        }
+    override var imagePath: String
+        get() {
+            return _tRG(__v_raw, "imagePath", __v_raw.imagePath, __v_isReadonly, __v_isShallow)
+        }
+        set(value) {
+            if (!__v_canSet("imagePath")) {
+                return
+            }
+            val oldValue = __v_raw.imagePath
+            __v_raw.imagePath = value
+            _tRS(__v_raw, "imagePath", oldValue, value)
         }
     override var imageBase64: String
         get() {
@@ -182,7 +196,7 @@ class FacePhotoRecordReactiveObject : FacePhotoRecord, IUTSReactive<FacePhotoRec
 }
 val PHOTO_STORAGE_KEY = "face_search_photo_records"
 fun toFacePhotoRecord(item: UTSJSONObject): FacePhotoRecord {
-    return FacePhotoRecord(id = item.getString("id") ?: "", createdAt = item.getNumber("createdAt") ?: 0, imageBase64 = item.getString("imageBase64") ?: "", matched = item.getBoolean("matched") ?: false, faceName = item.getString("faceName") ?: "", faceScore = item.getNumber("faceScore") ?: 0)
+    return FacePhotoRecord(id = item.getString("id") ?: "", createdAt = item.getNumber("createdAt") ?: 0, imagePath = item.getString("imagePath") ?: "", imageBase64 = item.getString("imageBase64") ?: "", matched = item.getBoolean("matched") ?: false, faceName = item.getString("faceName") ?: "", faceScore = item.getNumber("faceScore") ?: 0)
 }
 fun parsePhotoRecords(raw: String): UTSArray<FacePhotoRecord> {
     if (raw.length == 0) {
@@ -213,12 +227,12 @@ fun getAllFacePhotoRecords(): UTSArray<FacePhotoRecord> {
     }
     return _uA<FacePhotoRecord>()
 }
-fun saveFacePhotoRecord(imageBase64: String, matched: Boolean, faceName: String, faceScore: Number): Unit {
-    if (imageBase64.length == 0) {
+fun saveFacePhotoRecord(imagePath: String, imageBase64: String, matched: Boolean, faceName: String, faceScore: Number): Unit {
+    if (imagePath.length == 0 && imageBase64.length == 0) {
         return
     }
     val records = getAllFacePhotoRecords()
-    records.unshift(FacePhotoRecord(id = "" + Date.now() + "_" + Math.random(), createdAt = Date.now(), imageBase64 = imageBase64, matched = matched, faceName = faceName, faceScore = faceScore))
+    records.unshift(FacePhotoRecord(id = "" + Date.now() + "_" + Math.random(), createdAt = Date.now(), imagePath = imagePath, imageBase64 = imageBase64, matched = matched, faceName = faceName, faceScore = faceScore))
     uni_setStorageSync(PHOTO_STORAGE_KEY, JSON.stringify(records))
 }
 val GenPagesIndexIndexClass = CreateVueComponent(GenPagesIndexIndex::class.java, fun(): VueComponentOptions {

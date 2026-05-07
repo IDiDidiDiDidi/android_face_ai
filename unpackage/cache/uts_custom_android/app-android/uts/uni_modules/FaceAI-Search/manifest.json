@@ -5,7 +5,7 @@
   },
   "files": {
     "utssdk/app-android/index.uts": {
-      "md5": "efcb223594e0e9a74bb43e483eaf7b30"
+      "md5": "c243ad439c89343879a84419e5076ff7"
     },
     "utssdk/interface.uts": {
       "md5": "cf59a6ec7df271c3ca5cf081ef3eb732"
@@ -23,10 +23,13 @@
       "md5": "55935b8bc210819ab5c45dd5a2f0f5f0"
     },
     "utssdk/app-android/FaceResultManager.kt": {
-      "md5": "ab00a0a82dc3830167a05f370376b440"
+      "md5": "e69e52fce571c85f5d94bcb5c8c18725"
     },
     "utssdk/app-android/FaceSearchActivity.java": {
-      "md5": "8d5ca311e20934488f13bd2e6adca9c4"
+      "md5": "79cde3c396c28f88a86112eafc7273ab"
+    },
+    "utssdk/app-android/SearchFrameCaptureHelper.kt": {
+      "md5": "d94cb740bb36d61c31ed04bb8d09a6b1"
     },
     "utssdk/app-android/libs/FaceSDKLib-release.aar": {
       "md5": "cc9db0814f649de74a5bc43282411156"

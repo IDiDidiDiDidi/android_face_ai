@@ -27,8 +27,8 @@ export function startFaceSearch(
 ): void {
     
     // 1. 添加静默活体liveness
-    FaceResultManager.setCallback((json: string, liveness: number, base64: string) => {
-		const finalJson = `{"data":${json},"liveness":${liveness},"base64":"${base64}"}`
+    FaceResultManager.setCallback((json: string, liveness: number, base64: string, preCompareImagePath: string, captureAt: number) => {
+		const finalJson = `{"data":${json},"liveness":${liveness},"base64":"${base64}","preCompareImagePath":"${preCompareImagePath}","captureAt":${captureAt},"captureStage":"pre_compare"}`
         try {
             callback(finalJson);
         } catch(e) {

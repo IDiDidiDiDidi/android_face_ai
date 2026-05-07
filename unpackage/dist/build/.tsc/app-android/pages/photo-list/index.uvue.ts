@@ -36,6 +36,15 @@
 				}
 				return '\u5206\u6570\uff1a\u65e0'
 			},
+			getImageSrc(item: FacePhotoRecord): string {
+				if (item.imagePath.length > 0) {
+					if (item.imagePath.startsWith('file://')) {
+						return item.imagePath
+					}
+					return `file://${item.imagePath}`
+				}
+				return item.imageBase64
+			},
 		},
 	})
 
@@ -64,7 +73,7 @@ const _cache = this.$.renderCache
         }), [
           _cE("image", _uM({
             class: "photo-image",
-            src: item.imageBase64,
+            src: _ctx.getImageSrc(item),
             mode: "widthFix"
           }), null, 8 /* PROPS */, ["src"]),
           _cE("view", _uM({ class: "photo-meta" }), [

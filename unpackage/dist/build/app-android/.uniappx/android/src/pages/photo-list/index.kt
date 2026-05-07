@@ -35,7 +35,7 @@ open class GenPagesPhotoListIndex : BasePage {
                 ,
                 _cE(Fragment, null, RenderHelpers.renderList(_ctx.photoRecords, fun(item, __key, __index, _cached): Any {
                     return _cE("view", _uM("key" to item.id, "class" to "photo-card"), _uA(
-                        _cE("image", _uM("class" to "photo-image", "src" to item.imageBase64, "mode" to "widthFix"), null, 8, _uA(
+                        _cE("image", _uM("class" to "photo-image", "src" to _ctx.getImageSrc(item), "mode" to "widthFix"), null, 8, _uA(
                             "src"
                         )),
                         _cE("view", _uM("class" to "photo-meta"), _uA(
@@ -88,6 +88,16 @@ open class GenPagesPhotoListIndex : BasePage {
             return "\u5206\u6570\uff1a" + item.faceScore
         }
         return "\u5206\u6570\uff1a\u65e0"
+    }
+    open var getImageSrc = ::gen_getImageSrc_fn
+    open fun gen_getImageSrc_fn(item: FacePhotoRecord): String {
+        if (item.imagePath.length > 0) {
+            if (item.imagePath.startsWith("file://")) {
+                return item.imagePath
+            }
+            return "file://" + item.imagePath
+        }
+        return item.imageBase64
     }
     companion object {
         val styles: Map<String, Map<String, Map<String, Any>>> by lazy {

@@ -19,7 +19,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.TextUtils;  
 import android.util.Log;
@@ -52,6 +51,8 @@ import java.util.List;
  * @author FaceAISDK.Service@gmail.com
  */
 public class FaceSearchActivity extends AbsBaseActivity {
+    private static final long FACE_DETECTED_WINDOW_MS = 1200L;
+    private static final long NO_MATCH_RESULT_WINDOW_MS = 2200L;
     public static final String THRESHOLD_KEY = "THRESHOLD_KEY";    //人脸搜索阈值
     public static final String NEED_FACE_LIVE = "NEED_FACE_LIVE";   //是否开启活体检测
     public static final String SEARCH_ONE_TIME = "SEARCH_ONE_TIME";   //是否仅搜索一次就关闭搜索页
@@ -72,6 +73,9 @@ public class FaceSearchActivity extends AbsBaseActivity {
     private FaceCameraXFragment cameraXFragment; //摄像头请自行管理，源码全部开放
     private boolean pauseSearch = false; //控制是否送数据到SDK进行搜索
     private long searchStartTime = 0; //开始搜索时间
+    private long lastFaceDetectedAt = 0;
+    private String pendingPreCompareImagePath = "";
+    private long pendingCaptureAt = 0;
 
     /**
      * 获取UNI,RN,Flutter三方插件传递的参数,以便在原生代码中生效
@@ -175,14 +179,14 @@ public class FaceSearchActivity extends AbsBaseActivity {
                        runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                   if(!searchOne){
-                                       binding.graphicOverlay.drawRect(matchedResults);
-                                   }
-                                    
-                                   FaceResultManager.INSTANCE.sendResult(json,liveness,base64);
-                                   if(searchOneTime){
-                                       FaceSearchActivity.this.finish();
-                                   }
+                                    if(!searchOne){
+                                        binding.graphicOverlay.drawRect(matchedResults);
+                                    }
+
+                                    sendSearchResult(json, liveness, base64);
+                                    if(searchOneTime){
+                                        FaceSearchActivity.this.finish();
+                                    }
                                 }
                         });
                     }
@@ -209,6 +213,7 @@ public class FaceSearchActivity extends AbsBaseActivity {
                     @Override
                     public void onFaceDetected(List<FaceSearchResult> result) {
                         //画框UI代码完全开放，用户可以根据情况自行改造
+                        lastFaceDetectedAt = System.currentTimeMillis();
                         binding.graphicOverlay.drawRect(result);
                     }
 
@@ -235,6 +240,7 @@ public class FaceSearchActivity extends AbsBaseActivity {
             public void analyze(@NonNull ImageProxy imageProxy) {
                 //设备硬件可以加个红外检测有人靠近再启动人脸搜索检索服务，不然机器一直工作发热性能下降老化快
                 if (!isDestroyed() && !isFinishing() && !pauseSearch) {
+                    captureFrameBeforeCompare(imageProxy);
                     FaceSearchEngine.Companion.getInstance().runSearchWithImageProxy(imageProxy, 0);
                 }
             }
@@ -258,10 +264,11 @@ public class FaceSearchActivity extends AbsBaseActivity {
             case NO_MATCHED:
                 //本次没有搜索匹配到结果.没有结果会持续尝试1秒之内没有结果会返回NO_MATCHED code
                 setSecondTips(R.string.no_matched_face);
+                maybeSendPendingNoMatch();
                 
                 if(searchOneTime&&System.currentTimeMillis()/1000-searchStartTime>searchTimeOut){ // Fixed hardcoded '5' to use searchTimeOut
                     //超时没有返回结果
-                    FaceResultManager.INSTANCE.sendResult("[]",0.0f,""); //没有搜索结果
+                    FaceResultManager.INSTANCE.sendResult("[]",0.0f,"", "", 0L); //没有搜索结果
                     FaceSearchActivity.this.finish();
                 }
                 break;
@@ -328,6 +335,48 @@ public class FaceSearchActivity extends AbsBaseActivity {
      */
     private void setSecondTips(int resId) {
        binding.faceCover.setSecondTipsText(resId);
+    }
+
+    private void captureFrameBeforeCompare(@NonNull ImageProxy imageProxy) {
+        if (!shouldCapturePreCompareFrame()) {
+            return;
+        }
+
+        long captureAt = System.currentTimeMillis();
+        String imagePath = SearchFrameCaptureHelper.INSTANCE.saveImageProxyAsJpeg(this, imageProxy, captureAt);
+        if (!TextUtils.isEmpty(imagePath)) {
+            pendingPreCompareImagePath = imagePath;
+            pendingCaptureAt = captureAt;
+        }
+    }
+
+    private boolean shouldCapturePreCompareFrame() {
+        if (!TextUtils.isEmpty(pendingPreCompareImagePath)) {
+            return false;
+        }
+        return System.currentTimeMillis() - lastFaceDetectedAt <= FACE_DETECTED_WINDOW_MS;
+    }
+
+    private void maybeSendPendingNoMatch() {
+        if (TextUtils.isEmpty(pendingPreCompareImagePath)) {
+            return;
+        }
+        if (System.currentTimeMillis() - pendingCaptureAt < NO_MATCH_RESULT_WINDOW_MS) {
+            return;
+        }
+
+        FaceResultManager.INSTANCE.sendResult("[]", 0.0f, "", pendingPreCompareImagePath, pendingCaptureAt);
+        clearPendingPreCompareCapture();
+    }
+
+    private void sendSearchResult(String json, float liveness, String base64) {
+        FaceResultManager.INSTANCE.sendResult(json, liveness, base64, pendingPreCompareImagePath, pendingCaptureAt);
+        clearPendingPreCompareCapture();
+    }
+
+    private void clearPendingPreCompareCapture() {
+        pendingPreCompareImagePath = "";
+        pendingCaptureAt = 0L;
     }
 
     /**
